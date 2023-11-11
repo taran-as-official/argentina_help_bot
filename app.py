@@ -1,12 +1,52 @@
-from flask import Flask, request
-
+from flask import Flask, request, jsonify
+import datetime
 from loader import dp, BOT_TOKEN, NGROK_URL
 from dp.webhook import Webhook
 from keyboards import reply_keyboards, inline_keyboards
 from states.states import TestState
 
-
 app = Flask(__name__)
+
+@app.route("/getCountryList", methods=["GET"])
+def get_country_list():
+    timestamp = datetime.datetime.now().isoformat()
+    countries = ["Argentina", "Russia"]
+    data = {
+        "timestamp": timestamp,
+        "countries": countries
+    }
+    return jsonify(data)
+
+@app.route("/setCountry", methods=["POST"])
+def set_country():
+    try:
+        # Получаем JSON-данные из тела POST-запроса
+        data = request.json
+
+        # Проверяем, есть ли ключ "country" в JSON-данных
+        if "country" in data:
+            country = data["country"]
+            # Выполняем действия с переменной "country", например, сохраняем ее в базу данных
+            menu = []
+            if country == 'Argentina':
+                menu = ['documents','money change','transfer','translator']
+            if country == 'Russia':
+                menu = ['documents','transfer']
+            # Возвращаем успешный ответ
+            response = {
+                "status": f"Country '{country}' successfully processed.",
+                "menu": menu
+            }
+            return jsonify(response), 200
+        else:
+            # Если ключ "country" отсутствует в JSON-данных, возвращаем ошибку
+            response = {"error": "Missing 'country' key in JSON data."}
+            return jsonify(response), 400
+
+    except Exception as e:
+        # Если произошла ошибка при обработке запроса, возвращаем ошибку сервера
+        response = {"error": str(e)}
+        return jsonify(response), 500
 
 
 @app.route("/", methods=["GET","POST"])
@@ -80,7 +120,7 @@ def index():
                 chat_id=get_json["callback_query"]["message"]["chat"]["id"],
                 text="Thank you very much for the like.\nMy github portfolio: https://github.com/SarvarbekUzDev",
             )
-            
+
 
 
     return {"Ok":True}
